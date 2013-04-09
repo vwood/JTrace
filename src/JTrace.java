@@ -18,7 +18,9 @@ public class JTrace {
     
     public static void main(String[] args) {
         if (args.length != 4) {
-            System.err.println("Usage: java JTrace <attach|launch> <JDI info> <class> <method>");
+            System.err.println("Usage:");
+            System.err.println("\tjava JTrace attach <pid> <class> <method>");
+            System.err.println("\tjava JTrace launch <command>:<address> <class> <method>");
             return;
         }
 
@@ -27,10 +29,6 @@ public class JTrace {
     }
 
     public JTrace(String connect, String jdiInfo, String className, String methodName) {
-        System.out.println("JDI info: " + jdiInfo);
-        System.out.println("Class name: " + className);
-        System.out.println("Method name: " + methodName);
-
         if (connect.equals("attach")) {
             vm = attach(jdiInfo);
         } else if (connect.equals("launch")) {
