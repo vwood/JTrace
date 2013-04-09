@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -jar bin/JTrace.jar $@
+java -cp 'bin/tools.jar;bin/JTrace.jar' src.JTrace $@
