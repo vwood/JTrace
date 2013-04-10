@@ -1,4 +1,4 @@
-JFLAGS = -classpath $(JAVA_HOME)/lib/tools.jar -d bin
+JFLAGS = -Xlint:unchecked -classpath "$(JAVA_HOME)/lib/tools.jar;." -d bin
 
 JC = javac
 
