@@ -8,7 +8,7 @@ import com.sun.jdi.connect.*;
 public class JTrace {
     private final VirtualMachine vm;
 
-    private String[] excludes = {"java.*", "javax.*", "sun.*", "com.sun.*"};
+    private String[] excludedPackages = {"java.*", "javax.*", "com.sun.*"};
     
     public static void main(String[] args) {
         if (args.length != 4) {
@@ -45,8 +45,8 @@ public class JTrace {
 
     public void trace_method(String className, String methodName) {
         vm.setDebugTraceMode(VirtualMachine.TRACE_NONE);
-        PrintWriter writer = new PrintWriter(System.out); 
-        TraceThread tt = new TraceThread(vm, excludes, writer);
+        PrintWriter output = new PrintWriter(System.out); 
+        TraceThread tt = new TraceThread(vm, excludedPackages, output);
         tt.setDefaultEventRequests();
         tt.start();
 
