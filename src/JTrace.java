@@ -56,7 +56,7 @@ public class JTrace {
         } catch (InterruptedException e) {
             System.err.println("Thread was interrupted.");
         }
-        writer.close();
+ 	output.close();
     }
 
     VirtualMachine launch(String jdiInfo) {

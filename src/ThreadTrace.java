@@ -66,7 +66,7 @@ class ThreadTrace {
             count = thread.frameCount();
         } catch (IncompatibleThreadStateException e) { }
 
-        for (i = 0; i < count ; i++) {
+        for (int i = 0; i < count ; i++) {
             indent.append("| ");
         }
 

@@ -1,4 +1,9 @@
+
+ifeq ($(shell uname), Linux)
+JFLAGS = -Xlint:unchecked -classpath "$(JAVA_HOME)/lib/tools.jar:." -d bin
+else
 JFLAGS = -Xlint:unchecked -classpath "$(JAVA_HOME)/lib/tools.jar;." -d bin
+endif
 
 JC = javac
 
