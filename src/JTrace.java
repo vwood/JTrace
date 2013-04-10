@@ -1,14 +1,8 @@
 package src;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Iterator;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import com.sun.jdi.Bootstrap;
-import com.sun.jdi.VirtualMachineManager;
-import com.sun.jdi.VirtualMachine;
+import java.util.*;
+import java.io.*;
+import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
 
 public class JTrace {
@@ -24,11 +18,11 @@ public class JTrace {
             return;
         }
 
-        JTrace jt = new JTrace(args[0], args[1], args[2], args[3]);
-        jt.vm.setDebugTraceMode(VirtualMachine.TRACE_NONE);
+        JTrace jt = new JTrace(args[0], args[1]);
+        jt.trace_method(args[2], args[3]);
     }
 
-    public JTrace(String connect, String jdiInfo, String className, String methodName) {
+    public JTrace(String connect, String jdiInfo) {
         if (connect.equals("attach")) {
             vm = attach(jdiInfo);
         } else if (connect.equals("launch")) {
@@ -47,6 +41,22 @@ public class JTrace {
             System.exit(1);
             vm = null;
         }
+    }
+
+    public void trace_method(String className, String methodName) {
+        vm.setDebugTraceMode(VirtualMachine.TRACE_NONE);
+        PrintWriter writer = new PrintWriter(System.out); 
+        TraceThread tt = new TraceThread(vm, excludes, writer);
+        tt.setDefaultEventRequests();
+        tt.start();
+
+        vm.resume();
+        try {
+            tt.join();
+        } catch (InterruptedException e) {
+            System.err.println("Thread was interrupted.");
+        }
+        writer.close();
     }
 
     VirtualMachine launch(String jdiInfo) {
@@ -81,8 +91,6 @@ public class JTrace {
         }
         cmdArg.setValue(jdiInfos[1]);
         
-        System.out.println(arguments);
-
         try {
             return connector.launch(arguments);
         } catch (Exception e) {
@@ -109,8 +117,10 @@ public class JTrace {
             throw new Error("No pid argument in pid attaching JDI connector found.");
         }
         pidArg.setValue(jdiInfo);
-        
-        System.out.println(arguments);
+        pidArg = arguments.get("timeout");
+        if (pidArg != null) {
+            pidArg.setValue("100");
+        }
         
         try {
             return connector.attach(arguments);
