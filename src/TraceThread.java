@@ -187,7 +187,8 @@ public class TraceThread extends Thread {
         if (tc != null) {
             tc.methodExitEvent(event);
             if (targetClass.equals(event.method().declaringType().name()) &&
-                targetMethod.equals(event.method().name())) {
+                targetMethod.equals(event.method().name()) &&
+                tc.getDepth() <= 0) {
                 traceMap.remove(event.thread());
             }
         }

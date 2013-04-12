@@ -16,14 +16,16 @@ class ThreadContext {
     final PrintWriter output;
     final VirtualMachine vm;
     StringBuffer indent;
-
+    int depth;
+    
     ThreadContext(ThreadReference thread, PrintWriter output, VirtualMachine vm) {
         this.thread = thread;
         this.id = TraceThread.allocateThreadID();
         this.prefix = String.format("%3d ", id);
         this.indent = new StringBuffer();
         this.output = output;
-        this.vm = vm; 
+        this.vm = vm;
+        this.depth = 0;
         println("*** New Thread :'" + thread.name() + "' ***");
     }
 
@@ -34,10 +36,12 @@ class ThreadContext {
     void methodEntryEvent(MethodEntryEvent event)  {
         println(event.method().declaringType().name() + "." + event.method().name() + "()");
         indent.append("| ");
+        depth++;
     }
 	
     void methodExitEvent(MethodExitEvent event)  {
         indent.setLength(Math.max(indent.length()-2, 0));
+        depth--;
     }
 	
     void fieldWatchEvent(ModificationWatchpointEvent event)  {
@@ -76,5 +80,9 @@ class ThreadContext {
     void threadDeathEvent(ThreadDeathEvent event)  {
         indent.setLength(0);
         println("*** Dead Thread :'" + thread.name() + "' ***");
+    }
+
+    int getDepth() {
+        return depth;
     }
 }	
