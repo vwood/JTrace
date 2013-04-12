@@ -8,7 +8,7 @@ import com.sun.jdi.connect.*;
 public class JTrace {
     private final VirtualMachine vm;
 
-    private String[] excludedPackages = {"java.*", "javax.*", "sun.*", "com.sun.*"};
+    private String[] excludedPackages = {"java.*", "javax.*", "sun.*", "com.sun.*", "org.jboss.*", "org.apache.*"};
     
     public static void main(String[] args) {
         if (args.length != 4) {

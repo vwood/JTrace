@@ -67,12 +67,16 @@ public class TraceThread extends Thread {
         excReq.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         excReq.enable();
 
+        /*
+         * TODO: Possible improvement - only suspend the thread if the class/method names match via. a filter.
+         * Only then setup an eventRequest for events from that thread (with no suspend)
+         */
         MethodEntryRequest menr = mgr.createMethodEntryRequest();
         
         for (String pkg : excludedPackages) {
             menr.addClassExclusionFilter(pkg);
         }
-        menr.setSuspendPolicy(EventRequest.SUSPEND_NONE);
+        menr.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
         menr.enable();
 
         MethodExitRequest mexr = mgr.createMethodExitRequest();

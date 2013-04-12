@@ -16,7 +16,10 @@ class ThreadContext {
     final PrintWriter output;
     final VirtualMachine vm;
     StringBuffer indent;
-    int depth;
+    int localDepth;
+    int startDepth;
+    boolean hasStarted;
+
     
     ThreadContext(ThreadReference thread, PrintWriter output, VirtualMachine vm) {
         this.thread = thread;
@@ -25,7 +28,10 @@ class ThreadContext {
         this.indent = new StringBuffer();
         this.output = output;
         this.vm = vm;
-        this.depth = 0;
+        this.localDepth = 0;
+        this.startDepth = 0;
+        this.hasStarted = false;
+        
         println("*** New Thread :'" + thread.name() + "' ***");
     }
 
@@ -34,14 +40,21 @@ class ThreadContext {
     }
 
     void methodEntryEvent(MethodEntryEvent event)  {
+        try {
+            if (!hasStarted) {
+                hasStarted = true;
+                startDepth = thread.frameCount() - 1;
+            }
+        } catch (IncompatibleThreadStateException e) {}
+
         println(event.method().declaringType().name() + "." + event.method().name() + "()");
         indent.append("| ");
-        depth++;
+        localDepth++;
     }
 	
     void methodExitEvent(MethodExitEvent event)  {
         indent.setLength(Math.max(indent.length()-2, 0));
-        depth--;
+        localDepth--;
     }
 	
     void fieldWatchEvent(ModificationWatchpointEvent event)  {
@@ -53,6 +66,7 @@ class ThreadContext {
     void exceptionEvent(ExceptionEvent event) {
         println("Exception: " + event.exception());
         println("Caught: " + event.catchLocation());
+        
         StepRequest request = vm.eventRequestManager().createStepRequest(thread,
                                                                          StepRequest.STEP_MIN,
                                                                          StepRequest.STEP_INTO);
@@ -64,15 +78,16 @@ class ThreadContext {
     /* Step to exception catch */
     void stepEvent(StepEvent event)  {
         /* Fix depth */
-        int count = 0;
         indent = new StringBuffer();
+        localDepth = 0;
+        
         try {
-            count = thread.frameCount();
-        } catch (IncompatibleThreadStateException e) { }
+            localDepth = thread.frameCount() - startDepth;
+            for (int i = 0; i < localDepth ; i++) {
+                indent.append("| ");
+            }
 
-        for (int i = 0; i < count ; i++) {
-            indent.append("| ");
-        }
+        } catch (IncompatibleThreadStateException e) { }
 
         vm.eventRequestManager().deleteEventRequest(event.request());
     }
@@ -83,6 +98,6 @@ class ThreadContext {
     }
 
     int getDepth() {
-        return depth;
+        return localDepth;
     }
 }	
