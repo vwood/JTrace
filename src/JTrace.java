@@ -8,7 +8,7 @@ import com.sun.jdi.connect.*;
 public class JTrace {
     private final VirtualMachine vm;
 
-    private String[] excludedPackages = {"java.*", "javax.*", "com.sun.*"};
+    private String[] excludedPackages = {"java.*", "javax.*", "sun.*", "com.sun.*"};
     
     public static void main(String[] args) {
         if (args.length != 4) {
@@ -27,6 +27,10 @@ public class JTrace {
             vm = attach(jdiInfo);
         } else if (connect.equals("launch")) {
             vm = launch(jdiInfo);            
+        } else if (connect.equals("test")) {
+            TestLoop.loop();
+            System.exit(1);
+            vm = null;
         } else if (connect.equals("list")) {
             System.out.println("Connections:");
             for (Connector connector : Bootstrap.virtualMachineManager().allConnectors()) {
@@ -46,7 +50,7 @@ public class JTrace {
     public void trace_method(String className, String methodName) {
         vm.setDebugTraceMode(VirtualMachine.TRACE_NONE);
         PrintWriter output = new PrintWriter(System.out); 
-        TraceThread tt = new TraceThread(vm, excludedPackages, output);
+        TraceThread tt = new TraceThread(vm, className, methodName, excludedPackages, output);
         tt.setDefaultEventRequests();
         tt.start();
 
@@ -56,7 +60,7 @@ public class JTrace {
         } catch (InterruptedException e) {
             System.err.println("Thread was interrupted.");
         }
- 	output.close();
+        output.close();
     }
 
     VirtualMachine launch(String jdiInfo) {

@@ -8,6 +8,8 @@ import com.sun.jdi.event.*;
 
 public class TraceThread extends Thread {
     private final VirtualMachine vm;
+    private final String targetClass;
+    private final String targetMethod;
     private final String[] excludedPackages;
     private final PrintWriter output;
 
@@ -16,11 +18,14 @@ public class TraceThread extends Thread {
     private boolean vmConnected = true;
     private boolean vmRunning = true;
 
-    private Map<ThreadReference, ThreadTrace> traceMap = new HashMap<ThreadReference, ThreadTrace>();
+    private Map<ThreadReference, ThreadContext> traceMap = new HashMap<ThreadReference, ThreadContext>();
 
-    TraceThread(VirtualMachine vm, String[] excludedPackages, PrintWriter output) {
+    TraceThread(VirtualMachine vm, String targetClass, String targetMethod,
+                String[] excludedPackages, PrintWriter output) {
         super("Tracer");
         this.vm = vm;
+        this.targetClass = targetClass;
+        this.targetMethod = targetMethod;
         this.excludedPackages = excludedPackages;
         this.output = output;
     }
@@ -97,12 +102,12 @@ public class TraceThread extends Thread {
     }
 
     /**
-     * Create/get the ThreadTrace instance for the thread,
+     * Create/get the ThreadContext instance for the thread,
      */
-    ThreadTrace threadTrace(ThreadReference thread) {
-        ThreadTrace trace = traceMap.get(thread);
+    ThreadContext getCreateThreadContext(ThreadReference thread) {
+        ThreadContext trace = traceMap.get(thread);
         if (trace == null) {
-            trace = new ThreadTrace(thread, output, vm);
+            trace = new ThreadContext(thread, output, vm);
             traceMap.put(thread, trace);
         }
         return trace;
@@ -163,29 +168,50 @@ public class TraceThread extends Thread {
         output.println("-- VM Started --");
     }
 
-    /* Pass event to the correct ThreadTrace */
+    /* Pass event to the correct ThreadContext */
     private void methodEntryEvent(MethodEntryEvent event)  {
-        threadTrace(event.thread()).methodEntryEvent(event);
+        if (targetClass.equals(event.method().declaringType().name()) &&
+            targetMethod.equals(event.method().name())) {
+            getCreateThreadContext(event.thread()).methodEntryEvent(event);
+        } else {
+            ThreadContext tc = traceMap.get(event.thread());
+            if (tc != null) {
+                tc.methodEntryEvent(event);
+            }
+        }
     }
  
-    /* Pass event to the correct ThreadTrace */
+    /* Pass event to the correct ThreadContext */
     private void methodExitEvent(MethodExitEvent event)  {
-        threadTrace(event.thread()).methodExitEvent(event);
+        ThreadContext tc = traceMap.get(event.thread());
+        if (tc != null) {
+            tc.methodExitEvent(event);
+            if (targetClass.equals(event.method().declaringType().name()) &&
+                targetMethod.equals(event.method().name())) {
+                traceMap.remove(event.thread());
+            }
+        }
     }
 
-    /* Pass event to the correct ThreadTrace */
+    /* Pass event to the correct ThreadContext */
     private void stepEvent(StepEvent event)  {
-        threadTrace(event.thread()).stepEvent(event);
+        ThreadContext tc = traceMap.get(event.thread());
+        if (tc != null) {
+            tc.stepEvent(event);
+        }
     }
 
-    /* Pass event to the correct ThreadTrace */
+    /* Pass event to the correct ThreadContext */
     private void fieldWatchEvent(ModificationWatchpointEvent event)  {
-        threadTrace(event.thread()).fieldWatchEvent(event);
+        ThreadContext tc = traceMap.get(event.thread());
+        if (tc != null) {
+            tc.fieldWatchEvent(event);
+        }
     }
 
-    /* Only pass death events to ThreadTrace if it already exists */
+    /* Only pass death events to ThreadContext if it already exists */
     void threadDeathEvent(ThreadDeathEvent event)  {
-        ThreadTrace trace = (ThreadTrace)traceMap.get(event.thread());
+        ThreadContext trace = traceMap.get(event.thread());
         if (trace != null) {
             trace.threadDeathEvent(event);
         }
@@ -212,7 +238,7 @@ public class TraceThread extends Thread {
 
     /* Pass on exception events to our Tracer */
     private void exceptionEvent(ExceptionEvent event) {
-        ThreadTrace trace = (ThreadTrace)traceMap.get(event.thread());
+        ThreadContext trace = traceMap.get(event.thread());
         if (trace != null) {
             trace.exceptionEvent(event);
         }

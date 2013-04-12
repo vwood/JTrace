@@ -9,7 +9,7 @@ import com.sun.jdi.event.*;
 /**
  * Keeps information about the thread to format events correctly
  */
-class ThreadTrace {
+class ThreadContext {
     final ThreadReference thread;
     final String prefix;
     final int id;
@@ -17,7 +17,7 @@ class ThreadTrace {
     final VirtualMachine vm;
     StringBuffer indent;
 
-    ThreadTrace(ThreadReference thread, PrintWriter output, VirtualMachine vm) {
+    ThreadContext(ThreadReference thread, PrintWriter output, VirtualMachine vm) {
         this.thread = thread;
         this.id = TraceThread.allocateThreadID();
         this.prefix = String.format("%3d ", id);
